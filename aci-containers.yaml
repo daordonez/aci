@@ -1,0 +1,72 @@
+apiVersion: 2021-10-01
+type: Microsoft.ContainerInstance/containerGroups
+location: westeurope
+name: devacidordo
+identity:
+  type: UserAssigned
+  userAssignedIdentities: '/subscriptions/<susbscription-id>/resourcegroups/<resource-group>/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myUser01'
+properties:
+  containers:
+    - name: homer
+      properties:
+        image: drd01.azurecr.io/services/homer:latest
+        resources:
+          requests:
+            cpu: 1
+            memoryInGb: 1
+        ports:
+        - port: 8080
+        volumeMounts:
+        - mountPath: /www/assets
+          name: homer
+    - name: nginxpm
+      properties:
+        image: drd01.azurecr.io/services/npm:latest 
+        resources:
+          requests:
+            cpu: 1
+            memoryInGb: 1
+        ports:
+        - port: 80
+        - port: 443
+        - port: 81
+        environmentVariables:
+        - name: PUID
+          value: 1
+        - name: PGID
+          value: 1
+        volumeMounts:
+        - mountPath: /data
+          name: npm-data
+        - mountPath: /etc/letsencrypt
+          name: npm-letsencrypt
+  osType: Linux
+  restartPolicy: Never
+  imageRegistryCredentials:
+  - server: drd01.azurecr.io
+    identity: '/subscriptions/<susbscription-id>/resourcegroups/<resource-group>/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myUser01'
+  ipAddress:
+    type: Public
+    ports:
+    - protocol: tcp
+      port: 80
+    - protocol: tcp
+      port: 443
+    - protocol: tcp
+      port: 81
+  volumes:
+    - name: homer
+      azureFile:
+        sharename: homer
+        storageAccountName: <stg-account-name>
+        storageAccountKey: <sas-key>
+    - name: npm-data
+      azureFile:
+        sharename: npm-data
+        storageAccountName: <stg-account-name>
+        storageAccountKey: <sas-key>
+    - name: npm-letsencrypt
+      azureFile:
+        sharename: npm-letsencrypt
+        storageAccountName: <stg-account-name>
+        storageAccountKey: <sas-key>
